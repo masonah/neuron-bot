@@ -26,6 +26,11 @@ if __name__ == "__main__":
   slack_client = WebClient(SLACK_BOT_TOKEN)
   logging.debug("authorized slack client")
 
+  # ===== schedule cron job to run at 9am everyday (considering timezone) ===== #
+  # all users who have been onboarded and through the first core loop iteration (last interaction == previous day)
+  # don't want to interrupt them if they are on their first, or completed it that day
+  # need some timestamp on user object for "last interaction" to keep track
+
   # # For testing
   msg = "Good Morning!"
   schedule.every(60).seconds.do(lambda: sendMessage(slack_client, msg))

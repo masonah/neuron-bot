@@ -1,5 +1,6 @@
 import logging
 from expiringdict import ExpiringDict
+from .db_interface import DBInterface
 
 from .routes import app
 from flask import Flask, request, make_response, Response
@@ -11,6 +12,8 @@ from slack_sdk.errors import SlackApiError
 # ===== what about replay in the event of a dropped bot message? ===== #
 cache = ExpiringDict(max_len=100, max_age_seconds=1800) # 30 min expiry
 
+db = DBInterface()
+
 
 class Messages():
 
@@ -19,6 +22,8 @@ class Messages():
         slack_user_id = message['user']
 
         # if cache hit = use block_id as key, if miss start over core loop? or have some other trigger?
+        # can we use the message table to see last response based on most recent timestamp?
+        assert "abc123" in cache, "cache miss?"
         thread = cache[slack_user_id]
         if not thread:
             #cache miss
@@ -41,7 +46,8 @@ class Messages():
         # ===== how to determine if part of core message loop? handle based on block ids?
         # block ids don't come from messages ===== #
 
-    def start_core_loop(self, client, slack_user_id):
+    @staticmethod
+    def start_core_loop(client, slack_user_id):
         try:
             # ===== PULL THESE FROM DATABASE BASED (AT RANDOM?) ===== #
             skill_1 = "first skill"
@@ -94,6 +100,8 @@ class Messages():
 
     @staticmethod
     def send_intro_message(client, first_name, slack_user_id):
+        text = db.create_message("intro_message")
+        print(f"INTRO MESSAGE\n{text}")
         try:
             response = client.chat_postMessage(
                 channel=slack_user_id,

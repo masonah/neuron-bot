@@ -54,6 +54,22 @@ CREATE TABLE IF NOT EXISTS neuron_test.user (
 	FOREIGN KEY (job_id) REFERENCES job(id)
 );
 
+CREATE TABLE IF NOT EXISTS neuron_test.user_response (
+    user_id INT NOT NULL PRIMARY KEY,
+    message_block_id INT NOT NULL,
+    user_response TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES user(id)
+)
+
+CREATE TABLE IF NOT EXISTS neuron_test.message (
+    message_id CHAR(32) NOT NULL PRIMARY KEY,
+    message_time TIMESTAMP NOT NULL CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    text TEXT NOT NULL
+)
+
+INSERT INTO neuron_test.message (message_id, text)
+VALUES ('intro_message', 'Hi {first_name} :wave:\n\n:thought_balloon: Imagine you have a dedicated skill coach. All they care about is helping you build competency in the highest value skills :chart_with_upwards_trend: without taking too much time away from your work. They keep track of what skills you’re using, suggest high value skills you may want to consider, and deliver actionable tips to remind you how to get 1% better every day.\n\nWe are that skill coach, and we’re here to help you grow, achieve, and maximize your potential as an engineer! :rocket:\n\n• 3 quick questions about your work \n • 1 short piece of actionable content \n • 1 concrete example curated from the Neuron community\n\nReady to get started? Reply Y or N');
+
 -- Junction table to map users to their courses
 CREATE TABLE IF NOT EXISTS neuron_test.user_skill (
 	user_id INT REFERENCES user(id),

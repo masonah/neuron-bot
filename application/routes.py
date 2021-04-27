@@ -8,17 +8,14 @@ from flask import Flask, request, make_response, Response
 # from .models import db, User
 from .db_interface import DBInterface
 from .messages import Messages
+from config import Config as config
 
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from slack_sdk.signature import SignatureVerifier
 
-from slashCommand import Slash
-
-SLACK_BOT_TOKEN = os.environ['SLACK_BOT_TOKEN']
-SLACK_SIGNATURE = os.environ['SLACK_SIGNATURE']
-slack_client = WebClient(SLACK_BOT_TOKEN)
-verifier = SignatureVerifier(SLACK_SIGNATURE)
+slack_client = WebClient(config.SLACK_BOT_TOKEN)
+verifier = SignatureVerifier(config.SLACK_SIGNING_SECRET)
 
 logging.basicConfig(level=logging.DEBUG)
 db = DBInterface()
@@ -60,21 +57,21 @@ def handle_interactive():
         return make_response('invalid request', 403)
     else:
         payload = json.loads(request.form['payload'])
+        callback_id = payload['callback_id']
         payload_type = payload['type']
 
-        if payload_type == 'view_submission':
+        if callback_id == 'onboard_modal':  # AND payload_type == 'view_submission'
             # ===== modal submission ===== #
             submission_values = payload['view']['state']['values']
             user_values = payload['user']
 
             # ===== NEED TO SANITIZE ALL USER INPUT ===== #
 
-            # ===== need to check type of modal based on block_ids ===== #
-
             first_name = submission_values['ob_first_name']['first_name']['value']
             last_name = submission_values['ob_last_name']['last_name']['value']
             email = submission_values['ob_email']['email']['value']
             slack_user_id = user_values['id']
+
             # ===== CREATE USER IN DATABASE ===== #
             user = {
                 "first_name": first_name,
@@ -82,9 +79,11 @@ def handle_interactive():
                 "email": email,
                 "slack_user_id": slack_user_id,
             }
-            # ===== LOOK FOR SQL EXCEPTION FOR UNIQUE SLACK ID ===== #
+
+            # ===== SLACK ERRORS IF SLACK ID NOT UNIQUE (ERROR IS GENERAL, AMBIGUOUS ERROR THOUGH) ===== #
+            # if a user were to onboard again for whatever reason, slack would error
+            # we should check if user ID exists and just pass them along if so, as they are already onboarded
             db_user = db.create_user(user)
-            # print(f"{db_user} created.")
 
             messages.send_intro_message(slack_client, first_name, slack_user_id)
         else:
@@ -96,7 +95,6 @@ def handle_interactive():
 # ===== used for onboard slash command, needed to get user consent to start onboarding ===== #
 @app.route("/slack/onboard", methods=["POST"])
 def handle_command():
-    print('onboard command')
     # ===== Verify Signature ===== #
     if not verifier.is_valid_request(request.get_data(), request.headers):
         return make_response('invalid request', 403)
@@ -153,6 +151,7 @@ def onboard(user_id, channel_id, trigger_id):
             trigger_id=trigger_id,
             view={
                 "type": "modal",
+                "callback_id": "onboard_modal",
                 "title": {
                     "type": "plain_text",
                     "text": "Onboarding",

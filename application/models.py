@@ -14,7 +14,16 @@ class User(db.Model):
     slack_user_id = db.Column(db.CHAR(32), unique=True, index=True, nullable=False)
 
     def __repr__(self):
-        return '<User {}>'.format(self.slack_user_id)
+        return '<User: {}>'.format(self.slack_user_id)
+
+
+class Message(db.Model):
+    __tablename__ = 'message'
+    message_id = db.Column(db.CHAR(32), primary_key=True, nullable=False)
+    text = db.Column(db.TEXT, nullable=False)
+
+    def __repr__(self):
+        return '<Message: {}>'.format(self.text)
 
 # def __init__(self):
 #     self._slack_user_id = ''

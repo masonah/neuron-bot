@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 # from mysql.connector import connect, Error
 from application.routes import app
 from flask_sqlalchemy import SQLAlchemy
-from .models import db, User
+from .models import db, User, Message
 
 dotenv_path = join(dirname(__file__), '../.env')
 load_dotenv(dotenv_path)
@@ -49,6 +49,10 @@ class DBInterface(object):
         db.session.commit() #commits changes
 
         return user
+
+    @staticmethod
+    def get_message(message_id):
+        return Message.query.filter_by(message_id=message_id).first()['text']
 
     # def create_server_connection(self):
     #     try:
